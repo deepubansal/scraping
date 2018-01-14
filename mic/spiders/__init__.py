@@ -3,10 +3,12 @@
 # Please refer to the documentation for information on how to create and manage
 # your spiders.
 import os
+import json
 
 __output_dir = 'Output'
 __articles_dir = '{}/articles'.format(__output_dir)
 __domain_name_file = 'domain-name.txt'
+__article_info_file = '{}/articles.info'.format(__output_dir)
 
 
 def get_output_dir():
@@ -26,11 +28,32 @@ def ensure_dir(path):
     return path
 
 
+def ensure_json_file(path):
+    if not os.path.isfile(path):
+        if os.path.isdir(path):
+            raise
+        with open(path, 'w') as f:
+            f.write('[]')
+
+
 def parse_article(response):
-    filename = '{0}/{1}'.format(get_articles_dir(), text_to_filename(response.url.rsplit('/', 1)[-1]))
+    slug = response.url.rsplit('/', 1)[-1]
+    filename = '{0}/{1}'.format(get_articles_dir(), text_to_filename(slug))
     with open(filename, 'wb') as f:
         f.write(response.css('div.sp-article-column').extract_first().encode('utf-8'))
+    article_info = {'slug': slug, 'title': response.css('div.sp-header-txt::text').extract_first().strip(),
+                    'title-img': response.css('div.entry-thumb img::attr("src")').extract_first()}
+    save_article_info(article_info)
     return filename
+
+
+def save_article_info(article_info):
+    ensure_json_file(__article_info_file)
+    with open(__article_info_file) as f:
+        data = json.loads(f.read())
+    data.append(article_info)
+    with open(__article_info_file, 'wb') as f:
+        f.write(json.dumps(data))
 
 
 def text_to_filename(text):
