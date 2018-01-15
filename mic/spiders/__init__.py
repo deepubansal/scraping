@@ -38,13 +38,15 @@ def ensure_json_file(path):
 
 def parse_article(response):
     slug = response.url.rsplit('/', 1)[-1]
-    filename = '{0}/{1}'.format(get_articles_dir(), text_to_filename(slug))
-    with open(filename, 'wb') as f:
+    filename = text_to_filename(slug)
+    file_path = '{0}/{1}'.format(get_articles_dir(), filename)
+    with open(file_path, 'wb') as f:
         f.write(response.css('div.sp-article-column').extract_first().encode('utf-8'))
-    article_info = {'slug': slug, 'title': response.css('div.sp-header-txt::text').extract_first().strip(),
-                    'title-img': response.css('div.entry-thumb img::attr("src")').extract_first()}
+    article_info = {'article': filename, 'information':
+        {'slug': slug, 'title': response.css('div.sp-header-txt::text').extract_first().strip(),
+         'title-img': response.css('div.entry-thumb img::attr("src")').extract_first()}}
     save_article_info(article_info)
-    return filename
+    return file_path
 
 
 def save_article_info(article_info):
